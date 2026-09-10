@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Load the environment variables from .env
+  await dotenv.load(fileName: ".env");
+
+  // Initialize Supabase client
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
+
   runApp(const MyApp());
 }
 
@@ -37,7 +50,7 @@ class _IncubatorHomePageState extends State<IncubatorHomePage> {
       ),
       body: const Center(
         child: Text(
-          'Incubator Control Panel Ready',
+          'Supabase Connected Successfully!',
           style: TextStyle(fontSize: 18),
         ),
       ),
