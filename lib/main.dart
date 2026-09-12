@@ -102,11 +102,24 @@ class _IncubatorHomePageState extends State<IncubatorHomePage> {
                               'Temp: ${preset['target_temperature']}°C | Humidity: ${preset['target_humidity']}% | Days: ${preset['incubation_days']} Days',
                             ),
                             trailing: ElevatedButton(
-                              onPressed: () {
-                                setState(() {
-                                  selectedPresetInfo =
-                                      "Active Preset: ${preset['egg_type']} (${preset['target_temperature']}°C, ${preset['target_humidity']}%, ${preset['incubation_days']} Days)";
-                                });
+                              onPressed: () async {
+                                try {
+                                  await supabase.from('active_settings').update({
+                                    'egg_type': preset['egg_type'],
+                                    'target_temperature': preset['target_temperature'],
+                                    'target_humidity': preset['target_humidity'],
+                                    'incubation_days': preset['incubation_days'],
+                                  }).eq('id', 1);
+
+                                  setState(() {
+                                    selectedPresetInfo =
+                                        "Active Preset Set: ${preset['egg_type']} (${preset['target_temperature']}°C, ${preset['target_humidity']}%, ${preset['incubation_days']} Days)";
+                                  });
+                                } catch (e) {
+                                  setState(() {
+                                    selectedPresetInfo = "Error updating active preset: $e";
+                                  });
+                                }
                               },
                               child: const Text('Select'),
                             ),
