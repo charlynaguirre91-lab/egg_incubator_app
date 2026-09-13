@@ -90,7 +90,7 @@ class SpeciesData {
           'Quail eggs hatch in about 17\u201318 days. Maintain 37.5\u00B0C with 55\u201360% humidity. Quail eggs are small and require careful handling during incubation.',
     };
     final temp = preset['target_temperature'];
-    final tempStr = temp != null ? '${temp}\u00B0C' : '37.5\u00B0C';
+    final tempStr = temp != null ? '$temp\u00B0C' : '37.5\u00B0C';
     return SpeciesData(
       id: preset['id'] as int?,
       name: type,
@@ -162,7 +162,7 @@ class BatchData {
     final eggQty = session['egg_quantity'] as int? ?? 0;
     final hatched = session['eggs_hatched'] as int? ?? 0;
     final temp = session['temperature'];
-    final tempStr = temp != null ? '${temp}\u00B0C' : '37.5\u00B0C';
+    final tempStr = temp != null ? '$temp\u00B0C' : '37.5\u00B0C';
     final status = session['status'] as String? ?? 'Active';
     final isCompleted = status == 'Completed';
     final formattedStart = startDate.length >= 10 ? startDate.substring(0, 10) : startDate;
