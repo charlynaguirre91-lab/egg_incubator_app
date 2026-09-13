@@ -6,8 +6,8 @@ void main() {
   testWidgets('App starts and shows landing page', (WidgetTester tester) async {
     await tester.pumpWidget(const SmartHatchApp());
 
-    expect(find.text('SmartHatch'), findsOneWidget);
     expect(find.text('Smarter Hatching,\nBetter Results.'), findsOneWidget);
-    expect(find.text('Get Started'), findsOneWidget);
+    expect(find.text('Next'), findsOneWidget);
+    expect(find.text('Skip'), findsOneWidget);
   });
 }
