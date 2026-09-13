@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/supabase_service.dart';
 
 // ──────────────────────────────────────────────
 // App Entry Point
@@ -57,6 +58,7 @@ class SmartHatchApp extends StatelessWidget {
 // ══════════════════════════════════════════════
 
 class SpeciesData {
+  final int? id;
   final String name;
   final String emoji;
   final int incubationDays;
@@ -64,15 +66,43 @@ class SpeciesData {
   final String description;
 
   const SpeciesData({
+    this.id,
     required this.name,
     required this.emoji,
     required this.incubationDays,
     required this.temperature,
     required this.description,
   });
+
+  factory SpeciesData.fromPreset(Map<String, dynamic> preset) {
+    final type = preset['egg_type'] as String? ?? '';
+    final emojiMap = {
+      'Chicken': '\uD83D\uDC14',
+      'Duck': '\uD83D\uDC26',
+      'Quail': '\uD83E\uDD5A',
+    };
+    final descMap = {
+      'Chicken':
+          'Chicken eggs typically require 21 days of incubation. Maintain a steady temperature of 37.5\u00B0C and humidity around 50\u201355%. Turn the eggs regularly for best results.',
+      'Duck':
+          'Duck eggs need about 28 days to hatch. Keep the temperature at 37.5\u00B0C with higher humidity (60\u201365%) compared to chicken eggs. Increase humidity in the last 3 days.',
+      'Quail':
+          'Quail eggs hatch in about 17\u201318 days. Maintain 37.5\u00B0C with 55\u201360% humidity. Quail eggs are small and require careful handling during incubation.',
+    };
+    final temp = preset['target_temperature'];
+    final tempStr = temp != null ? '${temp}\u00B0C' : '37.5\u00B0C';
+    return SpeciesData(
+      id: preset['id'] as int?,
+      name: type,
+      emoji: emojiMap[type] ?? '\uD83E\uDD5A',
+      incubationDays: preset['incubation_days'] as int? ?? 21,
+      temperature: tempStr,
+      description: descMap[type] ?? 'Incubate eggs carefully.',
+    );
+  }
 }
 
-const List<SpeciesData> speciesList = [
+const List<SpeciesData> defaultSpeciesList = [
   SpeciesData(
     name: 'Chicken',
     emoji: '\uD83D\uDC14',
@@ -100,6 +130,7 @@ const List<SpeciesData> speciesList = [
 ];
 
 class BatchData {
+  final int id;
   final String batchNumber;
   final String species;
   final String startDate;
@@ -111,6 +142,7 @@ class BatchData {
   final bool isSuccess;
 
   const BatchData({
+    required this.id,
     required this.batchNumber,
     required this.species,
     required this.startDate,
@@ -121,43 +153,34 @@ class BatchData {
     required this.status,
     required this.isSuccess,
   });
-}
 
-final List<BatchData> sampleBatches = [
-  const BatchData(
-    batchNumber: 'Batch #23',
-    species: 'Chicken',
-    startDate: '2026-04-10',
-    endDate: '2026-05-01',
-    eggsTotal: 20,
-    eggsHatched: 18,
-    temperature: '37.5\u00B0C',
-    status: 'Completed',
-    isSuccess: true,
-  ),
-  const BatchData(
-    batchNumber: 'Batch #22',
-    species: 'Duck',
-    startDate: '2026-03-01',
-    endDate: '2026-03-29',
-    eggsTotal: 15,
-    eggsHatched: 12,
-    temperature: '37.5\u00B0C',
-    status: 'Completed',
-    isSuccess: true,
-  ),
-  const BatchData(
-    batchNumber: 'Batch #21',
-    species: 'Quail',
-    startDate: '2026-02-10',
-    endDate: '2026-02-27',
-    eggsTotal: 45,
-    eggsHatched: 40,
-    temperature: '37.5\u00B0C',
-    status: 'Completed',
-    isSuccess: true,
-  ),
-];
+  factory BatchData.fromSession(Map<String, dynamic> session) {
+    final id = session['id'] as int;
+    final species = session['egg_type'] as String? ?? '';
+    final startDate = session['start_date'] as String? ?? '';
+    final endDate = session['end_date'] as String? ?? '';
+    final eggQty = session['egg_quantity'] as int? ?? 0;
+    final hatched = session['eggs_hatched'] as int? ?? 0;
+    final temp = session['temperature'];
+    final tempStr = temp != null ? '${temp}\u00B0C' : '37.5\u00B0C';
+    final status = session['status'] as String? ?? 'Active';
+    final isCompleted = status == 'Completed';
+    final formattedStart = startDate.length >= 10 ? startDate.substring(0, 10) : startDate;
+    final formattedEnd = endDate.length >= 10 ? endDate.substring(0, 10) : endDate;
+    return BatchData(
+      id: id,
+      batchNumber: 'Batch #$id',
+      species: species,
+      startDate: formattedStart,
+      endDate: formattedEnd,
+      eggsTotal: eggQty,
+      eggsHatched: hatched,
+      temperature: tempStr,
+      status: status,
+      isSuccess: isCompleted && hatched > 0,
+    );
+  }
+}
 
 // ══════════════════════════════════════════════
 // LANDING PAGE
@@ -635,18 +658,65 @@ class _MainNavigationState extends State<MainNavigation> {
 // HOME SCREEN — Improved hierarchy
 // ══════════════════════════════════════════════
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<BatchData> _batches = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final sessions = await SupabaseService().getSessions();
+      if (mounted) {
+        setState(() {
+          _batches = sessions.map((s) => BatchData.fromSession(s)).toList();
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final totalBatches = _batches.length;
+    final completedBatches = _batches.where((b) => b.status == 'Completed').toList();
+    final bestRate = completedBatches.isNotEmpty
+        ? completedBatches
+            .map((b) => b.eggsTotal > 0 ? b.eggsHatched / b.eggsTotal : 0.0)
+            .reduce((a, b) => a > b ? a : b)
+        : 0.0;
+    final topSpecies = _batches.isNotEmpty
+        ? (() {
+            final counts = <String, int>{};
+            for (final b in _batches) {
+              counts[b.species] = (counts[b.species] ?? 0) + 1;
+            }
+            return (counts.entries.toList()
+                  ..sort((a, b) => b.value.compareTo(a.value)))
+                .first
+                .key;
+          })()
+        : '-';
+
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Greeting / Header
             _HomeHeader(
               onProfileTap: () {
                 Navigator.push(
@@ -657,7 +727,6 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // 2. Primary action — Start New Incubation (most prominent)
             SizedBox(
               width: double.infinity,
               height: 58,
@@ -697,10 +766,12 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 28),
 
-            // 3. Overview statistics (secondary)
             const _SectionLabel(text: 'OVERVIEW'),
             const SizedBox(height: 10),
             _OverviewCards(
+              totalBatches: '$totalBatches',
+              bestSuccess: '${(bestRate * 100).round()}%',
+              topSpecies: topSpecies,
               onTotalBatchesTap: () {
                 Navigator.push(
                   context,
@@ -722,20 +793,37 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // 4. Last completed batch
             const _SectionLabel(text: 'LAST BATCH'),
             const SizedBox(height: 10),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => BatchDetailsScreen(batch: sampleBatches[0]),
+            if (_loading)
+              const Center(child: CircularProgressIndicator())
+            else if (_batches.isNotEmpty)
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BatchDetailsScreen(batch: _batches.first),
+                    ),
+                  );
+                },
+                child: _LastBatchCard(batch: _batches.first),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade100),
+                ),
+                child: Center(
+                  child: Text(
+                    'No batches yet. Start your first incubation!',
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                   ),
-                );
-              },
-              child: const _LastBatchCard(),
-            ),
+                ),
+              ),
             const SizedBox(height: 24),
           ],
         ),
@@ -748,8 +836,38 @@ class HomeScreen extends StatelessWidget {
 // SPECIES SCREEN
 // ══════════════════════════════════════════════
 
-class SpeciesScreen extends StatelessWidget {
+class SpeciesScreen extends StatefulWidget {
   const SpeciesScreen({super.key});
+
+  @override
+  State<SpeciesScreen> createState() => _SpeciesScreenState();
+}
+
+class _SpeciesScreenState extends State<SpeciesScreen> {
+  List<SpeciesData> _species = defaultSpeciesList;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSpecies();
+  }
+
+  Future<void> _loadSpecies() async {
+    try {
+      final presets = await SupabaseService().getPresets();
+      if (presets.isNotEmpty && mounted) {
+        setState(() {
+          _species = presets.map((p) => SpeciesData.fromPreset(p)).toList();
+          _loading = false;
+        });
+      } else if (mounted) {
+        setState(() => _loading = false);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -769,24 +887,27 @@ class SpeciesScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 14, color: Colors.black54),
               ),
               const SizedBox(height: 16),
-              ...speciesList.map(
-                (species) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _SpeciesCard(
-                    name: species.name,
-                    description: '${species.incubationDays} days incubation period',
-                    emoji: species.emoji,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SpeciesDetailsScreen(species: species),
-                        ),
-                      );
-                    },
+              if (_loading)
+                const Center(child: CircularProgressIndicator())
+              else
+                ..._species.map(
+                  (species) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _SpeciesCard(
+                      name: species.name,
+                      description: '${species.incubationDays} days incubation period',
+                      emoji: species.emoji,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SpeciesDetailsScreen(species: species),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),
@@ -911,12 +1032,25 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
   SpeciesData? _selectedSpecies;
   int _eggCount = 20;
   int _currentStep = 1;
+  List<SpeciesData> _speciesList = defaultSpeciesList;
 
   @override
   void initState() {
     super.initState();
     _selectedSpecies = widget.selectedSpecies;
     if (_selectedSpecies != null) _currentStep = 2;
+    _loadSpecies();
+  }
+
+  Future<void> _loadSpecies() async {
+    try {
+      final presets = await SupabaseService().getPresets();
+      if (presets.isNotEmpty && mounted) {
+        setState(() {
+          _speciesList = presets.map((p) => SpeciesData.fromPreset(p)).toList();
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -951,7 +1085,7 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
             style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 20),
-          ...speciesList.map(
+          ..._speciesList.map(
             (species) {
               final isSelected = _selectedSpecies?.name == species.name;
               return Padding(
@@ -1435,16 +1569,38 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
               height: 54,
               child: ElevatedButton(
                 onPressed: _allChecked
-                    ? () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => IncubationStartedScreen(
-                              species: widget.species,
-                              eggCount: widget.eggCount,
-                            ),
-                          ),
-                        );
+                    ? () async {
+                        try {
+                          final service = SupabaseService();
+                          final now = DateTime.now();
+                          final tempNum = double.tryParse(
+                            widget.species.temperature.replaceAll(RegExp(r'[^0-9.]'), ''),
+                          );
+                          final sessionId = await service.createSession(
+                            eggType: widget.species.name,
+                            startDate: now,
+                            eggQuantity: widget.eggCount,
+                            temperature: tempNum,
+                          );
+                          if (mounted) {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => IncubationStartedScreen(
+                                  species: widget.species,
+                                  eggCount: widget.eggCount,
+                                  sessionId: sessionId,
+                                ),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error: $e')),
+                            );
+                          }
+                        }
                       }
                     : null,
                 style: ElevatedButton.styleFrom(
@@ -1497,17 +1653,19 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
 class IncubationStartedScreen extends StatelessWidget {
   final SpeciesData species;
   final int eggCount;
+  final int sessionId;
   const IncubationStartedScreen({
     super.key,
     required this.species,
     required this.eggCount,
+    required this.sessionId,
   });
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final hatchDate = now.add(Duration(days: species.incubationDays));
-    final batchNum = 'Batch #${sampleBatches.length + 24}';
+    final batchNum = 'Batch #$sessionId';
 
     return Scaffold(
       body: SafeArea(
@@ -1628,6 +1786,7 @@ class IncubationStartedScreen extends StatelessWidget {
                             species: species,
                             eggCount: eggCount,
                             batchId: batchNum,
+                            sessionId: sessionId,
                             startDate: now,
                           ),
                         ),
@@ -1660,6 +1819,7 @@ class ActiveIncubationScreen extends StatelessWidget {
   final SpeciesData species;
   final int eggCount;
   final String batchId;
+  final int sessionId;
   final DateTime startDate;
   final int currentDay;
   const ActiveIncubationScreen({
@@ -1667,6 +1827,7 @@ class ActiveIncubationScreen extends StatelessWidget {
     required this.species,
     required this.eggCount,
     required this.batchId,
+    required this.sessionId,
     required this.startDate,
     this.currentDay = 8,
   });
@@ -2094,6 +2255,14 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  List<BatchData> _batches = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBatches();
+  }
 
   @override
   void dispose() {
@@ -2101,10 +2270,24 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.dispose();
   }
 
+  Future<void> _loadBatches() async {
+    try {
+      final sessions = await SupabaseService().getSessions();
+      if (mounted) {
+        setState(() {
+          _batches = sessions.map((s) => BatchData.fromSession(s)).toList();
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
   List<BatchData> get _filteredBatches {
-    if (_searchQuery.isEmpty) return sampleBatches;
+    if (_searchQuery.isEmpty) return _batches;
     final q = _searchQuery.toLowerCase();
-    return sampleBatches.where((b) {
+    return _batches.where((b) {
       return b.batchNumber.toLowerCase().contains(q) ||
           b.species.toLowerCase().contains(q);
     }).toList();
@@ -2184,7 +2367,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (batches.isEmpty) ...[
+            if (_loading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 40),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (batches.isEmpty) ...[
               const SizedBox(height: 40),
               Center(
                 child: Column(
@@ -2215,6 +2405,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 (batch) => Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _HistoryBatchCard(
+                    id: batch.id,
                     batchNumber: batch.batchNumber,
                     species: batch.species,
                     startDate: batch.startDate,
@@ -2246,9 +2437,9 @@ class BatchDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final hatchRate =
         batch.eggsTotal > 0 ? batch.eggsHatched / batch.eggsTotal : 0.0;
-    final speciesData = speciesList.firstWhere(
+    final speciesData = defaultSpeciesList.firstWhere(
       (s) => s.name == batch.species,
-      orElse: () => speciesList[0],
+      orElse: () => defaultSpeciesList[0],
     );
 
     return Scaffold(
@@ -2919,11 +3110,17 @@ class _HomeHeader extends StatelessWidget {
 }
 
 class _OverviewCards extends StatelessWidget {
+  final String totalBatches;
+  final String bestSuccess;
+  final String topSpecies;
   final VoidCallback onTotalBatchesTap;
   final VoidCallback onBestSuccessTap;
   final VoidCallback onTopSpeciesTap;
 
   const _OverviewCards({
+    required this.totalBatches,
+    required this.bestSuccess,
+    required this.topSpecies,
     required this.onTotalBatchesTap,
     required this.onBestSuccessTap,
     required this.onTopSpeciesTap,
@@ -2936,8 +3133,8 @@ class _OverviewCards extends StatelessWidget {
         Expanded(
           child: GestureDetector(
             onTap: onTotalBatchesTap,
-            child: const _OverviewCard(
-              value: '5',
+            child: _OverviewCard(
+              value: totalBatches,
               label: 'TOTAL BATCHES',
               supportingText: 'completed',
               icon: Icons.inventory_2_outlined,
@@ -2948,8 +3145,8 @@ class _OverviewCards extends StatelessWidget {
         Expanded(
           child: GestureDetector(
             onTap: onBestSuccessTap,
-            child: const _OverviewCard(
-              value: '92%',
+            child: _OverviewCard(
+              value: bestSuccess,
               label: 'BEST HATCH\nSUCCESS',
               supportingText: 'batch success',
               icon: Icons.emoji_events_outlined,
@@ -2960,8 +3157,8 @@ class _OverviewCards extends StatelessWidget {
         Expanded(
           child: GestureDetector(
             onTap: onTopSpeciesTap,
-            child: const _OverviewCard(
-              value: 'Chicken',
+            child: _OverviewCard(
+              value: topSpecies,
               label: 'TOP SPECIES',
               supportingText: '',
               icon: Icons.egg_outlined,
@@ -3041,10 +3238,14 @@ class _OverviewCard extends StatelessWidget {
 }
 
 class _LastBatchCard extends StatelessWidget {
-  const _LastBatchCard();
+  final BatchData batch;
+  const _LastBatchCard({required this.batch});
 
   @override
   Widget build(BuildContext context) {
+    final hatchRate = batch.eggsTotal > 0 ? batch.eggsHatched / batch.eggsTotal : 0.0;
+    final percentage = '${(hatchRate * 100).round()}%';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -3081,9 +3282,9 @@ class _LastBatchCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Batch #23',
-                      style: TextStyle(
+                    Text(
+                      batch.batchNumber,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -3091,7 +3292,7 @@ class _LastBatchCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'CHICKEN \u2022 2026-04-10',
+                      '${batch.species.toUpperCase()} \u2022 ${batch.startDate}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -3110,9 +3311,9 @@ class _LastBatchCard extends StatelessWidget {
                       const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Text(
-                  '90%',
-                  style: TextStyle(
+                child: Text(
+                  percentage,
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF4CAF50),
@@ -3141,9 +3342,9 @@ class _LastBatchCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '18/20 hatched',
-                      style: TextStyle(
+                    Text(
+                      '${batch.eggsHatched}/${batch.eggsTotal} hatched',
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -3172,9 +3373,9 @@ class _LastBatchCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '37.5\u00B0C',
-                      style: TextStyle(
+                    Text(
+                      batch.temperature,
+                      style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -3266,6 +3467,7 @@ class _SpeciesCard extends StatelessWidget {
 }
 
 class _HistoryBatchCard extends StatelessWidget {
+  final int id;
   final String batchNumber;
   final String species;
   final String startDate;
@@ -3276,6 +3478,7 @@ class _HistoryBatchCard extends StatelessWidget {
   final bool isSuccess;
 
   const _HistoryBatchCard({
+    required this.id,
     required this.batchNumber,
     required this.species,
     required this.startDate,
@@ -3306,6 +3509,7 @@ class _HistoryBatchCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         final batch = BatchData(
+          id: id,
           batchNumber: batchNumber,
           species: species,
           startDate: startDate,
