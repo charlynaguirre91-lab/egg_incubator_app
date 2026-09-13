@@ -64,27 +64,27 @@ class SpeciesData {
 const List<SpeciesData> speciesList = [
   SpeciesData(
     name: 'Chicken',
-    emoji: '🐔',
+    emoji: '\uD83D\uDC14',
     incubationDays: 21,
-    temperature: '37.5°C',
+    temperature: '37.5\u00B0C',
     description:
-        'Chicken eggs typically require 21 days of incubation. Maintain a steady temperature of 37.5°C and humidity around 50-55%. Turn the eggs regularly for best results.',
+        'Chicken eggs typically require 21 days of incubation. Maintain a steady temperature of 37.5\u00B0C and humidity around 50\u201355%. Turn the eggs regularly for best results.',
   ),
   SpeciesData(
     name: 'Duck',
-    emoji: '🦆',
+    emoji: '\uD83D\uDC26',
     incubationDays: 28,
-    temperature: '37.5°C',
+    temperature: '37.5\u00B0C',
     description:
-        'Duck eggs need about 28 days to hatch. Keep the temperature at 37.5°C with higher humidity (60-65%) compared to chicken eggs. Increase humidity in the last 3 days.',
+        'Duck eggs need about 28 days to hatch. Keep the temperature at 37.5\u00B0C with higher humidity (60\u201365%) compared to chicken eggs. Increase humidity in the last 3 days.',
   ),
   SpeciesData(
     name: 'Quail',
-    emoji: '🥚',
+    emoji: '\uD83E\uDD5A',
     incubationDays: 17,
-    temperature: '37.5°C',
+    temperature: '37.5\u00B0C',
     description:
-        'Quail eggs hatch in about 17-18 days. Maintain 37.5°C with 55-60% humidity. Quail eggs are small and require careful handling during incubation.',
+        'Quail eggs hatch in about 17\u201318 days. Maintain 37.5\u00B0C with 55\u201360% humidity. Quail eggs are small and require careful handling during incubation.',
   ),
 ];
 
@@ -120,7 +120,7 @@ final List<BatchData> sampleBatches = [
     endDate: '2026-05-01',
     eggsTotal: 20,
     eggsHatched: 18,
-    temperature: '37.5°C',
+    temperature: '37.5\u00B0C',
     status: 'Completed',
     isSuccess: true,
   ),
@@ -131,7 +131,7 @@ final List<BatchData> sampleBatches = [
     endDate: '2026-03-29',
     eggsTotal: 15,
     eggsHatched: 12,
-    temperature: '37.5°C',
+    temperature: '37.5\u00B0C',
     status: 'Completed',
     isSuccess: true,
   ),
@@ -142,7 +142,7 @@ final List<BatchData> sampleBatches = [
     endDate: '2026-02-27',
     eggsTotal: 45,
     eggsHatched: 40,
-    temperature: '37.5°C',
+    temperature: '37.5\u00B0C',
     status: 'Completed',
     isSuccess: true,
   ),
@@ -152,122 +152,236 @@ final List<BatchData> sampleBatches = [
 // LANDING PAGE
 // ══════════════════════════════════════════════
 
-class LandingPage extends StatelessWidget {
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
+
+  @override
+  State<LandingPage> createState() => _LandingPageState();
+}
+
+class _LandingPageState extends State<LandingPage> {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+
+  static const _slides = [
+    _OnboardingSlide(
+      icon: Icons.egg_outlined,
+      title: 'Smarter Hatching,\nBetter Results.',
+      body:
+          'SmartHatch helps you monitor and manage your egg incubation with ease.',
+    ),
+    _OnboardingSlide(
+      icon: Icons.monitor_heart_outlined,
+      title: 'Track Your\nIncubation',
+      body:
+          'Keep track of your eggs, incubation progress, temperature, and expected hatch date in one place.',
+    ),
+    _OnboardingSlide(
+      icon: Icons.inventory_2_outlined,
+      title: 'Manage Your\nBatches',
+      body:
+          'Review previous incubation batches and easily check your results anytime.',
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _goHome() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const MainNavigation()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top -
+                  MediaQuery.of(context).padding.bottom,
+            ),
             child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'SmartHatch',
-                  style: TextStyle(
-                    fontSize: 30,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFFE8752A),
-                    letterSpacing: 1.0,
+                // Skip button — top-right
+                Align(
+                  alignment: Alignment.topRight,
+                  child: TextButton(
+                    onPressed: _goHome,
+                    child: Text(
+                      'Skip',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 40),
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE8752A).withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.egg_outlined,
-                    size: 72,
-                    color: Color(0xFFE8752A),
-                  ),
-                ),
-                const SizedBox(height: 40),
-                const Text(
-                  'Smarter Hatching,\nBetter Results.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  'SmartHatch helps you monitor and manage\nyour egg incubation with ease.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey.shade600,
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 44),
+
+                // Page view
                 SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MainNavigation(),
+                  height: MediaQuery.of(context).size.height * 0.55,
+                  child: PageView.builder(
+                    controller: _pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _slides.length,
+                    onPageChanged: (index) {
+                      setState(() => _currentPage = index);
+                    },
+                    itemBuilder: (context, index) {
+                      final slide = _slides[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Icon
+                            Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8752A).withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                slide.icon,
+                                size: 60,
+                                color: const Color(0xFFE8752A),
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+
+                            // Title
+                            Text(
+                              slide.title,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                height: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Body
+                            Text(
+                              slide.body,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey.shade600,
+                                height: 1.5,
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE8752A),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 2,
-                    ),
-                    child: const Text(
-                      'Get Started',
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const SignInScreen(),
+
+                // Bottom controls
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(32, 0, 32, 24),
+                  child: Column(
+                    children: [
+                      // Page indicator dots
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(_slides.length, (i) {
+                          final isActive = i == _currentPage;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            margin: const EdgeInsets.symmetric(horizontal: 5),
+                            width: isActive ? 24 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? const Color(0xFFE8752A)
+                                  : Colors.grey.shade300,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          );
+                        }),
                       ),
-                    );
-                  },
-                  child: Text.rich(
-                    TextSpan(
-                      text: 'Already have an account? ',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade500,
-                      ),
-                      children: const [
-                        TextSpan(
-                          text: 'Sign in',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFFE8752A),
+                      const SizedBox(height: 28),
+
+                      // Main action button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 54,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (_currentPage < _slides.length - 1) {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            } else {
+                              _goHome();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFE8752A),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Text(
+                            _currentPage < _slides.length - 1 ? 'Next' : 'Get Started',
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Sign in link
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SignInScreen(),
+                            ),
+                          );
+                        },
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Already have an account? ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade500,
+                            ),
+                            children: const [
+                              TextSpan(
+                                text: 'Sign in',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFFE8752A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -277,6 +391,18 @@ class LandingPage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _OnboardingSlide {
+  final IconData icon;
+  final String title;
+  final String body;
+
+  const _OnboardingSlide({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -495,7 +621,7 @@ class _MainNavigationState extends State<MainNavigation> {
 }
 
 // ══════════════════════════════════════════════
-// HOME SCREEN
+// HOME SCREEN — Improved hierarchy
 // ══════════════════════════════════════════════
 
 class HomeScreen extends StatelessWidget {
@@ -509,6 +635,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // 1. Greeting / Header
             _HomeHeader(
               onProfileTap: () {
                 Navigator.push(
@@ -518,6 +645,48 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
+
+            // 2. Primary action — Start New Incubation (most prominent)
+            SizedBox(
+              width: double.infinity,
+              height: 58,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const IncubationSetupScreen(),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFE8752A),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 3,
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add, size: 24),
+                    SizedBox(width: 10),
+                    Text(
+                      'Start New Incubation',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // 3. Overview statistics (secondary)
             const _SectionLabel(text: 'OVERVIEW'),
             const SizedBox(height: 10),
             _OverviewCards(
@@ -541,6 +710,8 @@ class HomeScreen extends StatelessWidget {
               },
             ),
             const SizedBox(height: 24),
+
+            // 4. Last completed batch
             const _SectionLabel(text: 'LAST BATCH'),
             const SizedBox(height: 10),
             GestureDetector(
@@ -553,19 +724,6 @@ class HomeScreen extends StatelessWidget {
                 );
               },
               child: const _LastBatchCard(),
-            ),
-            const SizedBox(height: 24),
-            const _SectionLabel(text: 'ACTIONS'),
-            const SizedBox(height: 10),
-            _StartIncubationCTA(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const IncubationSetupScreen(),
-                  ),
-                );
-              },
             ),
             const SizedBox(height: 24),
           ],
@@ -584,46 +742,42 @@ class SpeciesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 8),
-            const Text(
-              'Select Species',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Egg Species'),
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Choose the type of eggs you want to incubate.',
+                style: TextStyle(fontSize: 14, color: Colors.black54),
               ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Choose the type of egg you want to incubate',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
-            ),
-            const SizedBox(height: 20),
-            ...speciesList.map(
-              (species) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _SpeciesCard(
-                  name: species.name,
-                  description: '${species.incubationDays} days incubation period',
-                  emoji: species.emoji,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SpeciesDetailsScreen(species: species),
-                      ),
-                    );
-                  },
+              const SizedBox(height: 16),
+              ...speciesList.map(
+                (species) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _SpeciesCard(
+                    name: species.name,
+                    description: '${species.incubationDays} days incubation period',
+                    emoji: species.emoji,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SpeciesDetailsScreen(species: species),
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -682,7 +836,7 @@ class SpeciesDetailsScreen extends StatelessWidget {
               value: species.temperature,
             ),
             const SizedBox(height: 20),
-            const _SectionLabel(text: 'DESCRIPTION'),
+            const _SectionLabel(text: 'ABOUT THIS SPECIES'),
             const SizedBox(height: 8),
             Text(
               species.description,
@@ -695,7 +849,7 @@ class SpeciesDetailsScreen extends StatelessWidget {
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -731,7 +885,7 @@ class SpeciesDetailsScreen extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════
-// INCUBATION SETUP (Step 1 & 2)
+// INCUBATION SETUP — Step 1 & 2 (improved UX)
 // ══════════════════════════════════════════════
 
 class IncubationSetupScreen extends StatefulWidget {
@@ -744,7 +898,7 @@ class IncubationSetupScreen extends StatefulWidget {
 
 class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
   SpeciesData? _selectedSpecies;
-  final _eggController = TextEditingController(text: '20');
+  int _eggCount = 20;
   int _currentStep = 1;
 
   @override
@@ -755,18 +909,14 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
   }
 
   @override
-  void dispose() {
-    _eggController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('New Incubation')),
+      appBar: AppBar(title: Text(_currentStep == 1 ? 'Select Species' : 'Egg Quantity')),
       body: _currentStep == 1 ? _buildStep1() : _buildStep2(),
     );
   }
+
+  // ── Step 1: What are you hatching? ──
 
   Widget _buildStep1() {
     return Padding(
@@ -775,41 +925,146 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildStepIndicator(1, 3),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           const Text(
-            'Select Species',
+            'What are you hatching?',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
-            'Choose the type of egg to incubate',
+            'Tap to select a species',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 20),
           ...speciesList.map(
-            (species) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _SpeciesCard(
-                name: species.name,
-                description: '${species.incubationDays} days',
-                emoji: species.emoji,
-                onTap: () {
-                  setState(() {
-                    _selectedSpecies = species;
-                    _currentStep = 2;
-                  });
-                },
+            (species) {
+              final isSelected = _selectedSpecies?.name == species.name;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedSpecies = species;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFFE8752A)
+                            : Colors.grey.shade100,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? const Color(0xFFE8752A).withValues(alpha: 0.15)
+                              : Colors.black.withValues(alpha: 0.04),
+                          blurRadius: isSelected ? 12 : 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFFE8752A).withValues(alpha: 0.15)
+                                : const Color(0xFFE8752A).withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              species.emoji,
+                              style: const TextStyle(fontSize: 30),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                species.name,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                  color: isSelected
+                                      ? const Color(0xFFE8752A)
+                                      : Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${species.incubationDays} days incubation',
+                                style: const TextStyle(
+                                    fontSize: 13, color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          const Icon(
+                            Icons.check_circle,
+                            color: Color(0xFFE8752A),
+                            size: 24,
+                          )
+                        else
+                          const Icon(Icons.chevron_right, color: Colors.black38),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: _selectedSpecies != null
+                  ? () {
+                      setState(() {
+                        _currentStep = 2;
+                      });
+                    }
+                  : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFE8752A),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: _selectedSpecies != null ? 2 : 0,
+              ),
+              child: const Text(
+                'Continue',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
+
+  // ── Step 2: How many eggs? ──
 
   Widget _buildStep2() {
     return Padding(
@@ -818,21 +1073,23 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildStepIndicator(2, 3),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           const Text(
-            'Enter Number of Eggs',
+            'How many eggs?',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Text(
-            'How many ${_selectedSpecies?.name.toLowerCase() ?? 'eggs'} will you incubate?',
+            'Set the number of ${_selectedSpecies?.name.toLowerCase() ?? 'eggs'} to incubate',
             style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
           const SizedBox(height: 24),
+
+          // Selected species summary
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -843,7 +1100,7 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
             child: Row(
               children: [
                 Text(
-                  _selectedSpecies?.emoji ?? '🥚',
+                  _selectedSpecies?.emoji ?? '\uD83E\uDD5A',
                   style: const TextStyle(fontSize: 32),
                 ),
                 const SizedBox(width: 16),
@@ -859,7 +1116,7 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
                         ),
                       ),
                       Text(
-                        '${_selectedSpecies?.incubationDays ?? 0} days • ${_selectedSpecies?.temperature ?? ''}',
+                        '${_selectedSpecies?.incubationDays ?? 0} days \u2022 ${_selectedSpecies?.temperature ?? ''}',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade500,
@@ -871,51 +1128,92 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          TextField(
-            controller: _eggController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Number of Eggs',
-              hintText: 'e.g. 20',
-              prefixIcon: const Icon(Icons.egg_outlined),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              filled: true,
-              fillColor: Colors.white,
-            ),
-          ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: () {
-                final eggs = int.tryParse(_eggController.text);
-                if (eggs == null || eggs <= 0) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid number of eggs')),
-                  );
-                  return;
-                }
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => IncubationChecklistScreen(
-                      species: _selectedSpecies!,
-                      eggCount: eggs,
+
+          // Egg counter with +/- buttons
+          Center(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _CounterButton(
+                    icon: Icons.remove,
+                    onTap: _eggCount > 1
+                        ? () => setState(() => _eggCount--)
+                        : null,
+                  ),
+                  SizedBox(
+                    width: 80,
+                    child: Text(
+                      '$_eggCount',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
-                );
-              },
+                  _CounterButton(
+                    icon: Icons.add,
+                    onTap: _eggCount < 999
+                        ? () => setState(() => _eggCount++)
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Center(
+            child: Text(
+              'eggs',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: _eggCount > 0
+                  ? () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => IncubationChecklistScreen(
+                            species: _selectedSpecies!,
+                            eggCount: _eggCount,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFE8752A),
                 foregroundColor: Colors.white,
+                disabledBackgroundColor: Colors.grey.shade300,
+                disabledForegroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
-                elevation: 2,
+                elevation: _eggCount > 0 ? 2 : 0,
               ),
               child: const Text(
                 'Continue',
@@ -923,6 +1221,7 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -937,9 +1236,8 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
             height: 4,
             margin: EdgeInsets.only(right: index < total - 1 ? 8 : 0),
             decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xFFE8752A)
-                  : Colors.grey.shade200,
+              color:
+                  isActive ? const Color(0xFFE8752A) : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -949,8 +1247,39 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
   }
 }
 
+// ── Large counter +/- button ──
+
+class _CounterButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _CounterButton({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: onTap != null
+              ? const Color(0xFFE8752A).withValues(alpha: 0.1)
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Icon(
+          icon,
+          size: 28,
+          color: onTap != null ? const Color(0xFFE8752A) : Colors.grey.shade400,
+        ),
+      ),
+    );
+  }
+}
+
 // ══════════════════════════════════════════════
-// INCUBATION CHECKLIST (Step 3)
+// INCUBATION CHECKLIST — Step 3 (improved UX)
 // ══════════════════════════════════════════════
 
 class IncubationChecklistScreen extends StatefulWidget {
@@ -969,13 +1298,12 @@ class IncubationChecklistScreen extends StatefulWidget {
 
 class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
   final List<String> _checklistItems = [
-    'Eggs are clean and suitable',
     'Incubator is clean',
     'Temperature is stable',
-    'Water/humidity level is checked',
+    'Water level is checked',
     'Eggs are properly positioned',
   ];
-  final List<bool> _checked = [false, false, false, false, false];
+  final List<bool> _checked = [false, false, false, false];
 
   bool get _allChecked => _checked.every((c) => c);
 
@@ -989,21 +1317,23 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildStepIndicator(3, 3),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             const Text(
-              'Pre-Incubation Checklist',
+              'Before we start',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
             Text(
-              'Confirm all items before starting',
+              'Please check that everything is ready',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+
+            // Species + egg count summary
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -1011,69 +1341,87 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.grey.shade100),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  Row(
-                    children: [
-                      Text(widget.species.emoji, style: const TextStyle(fontSize: 28)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.species.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              '${widget.eggCount} eggs • ${widget.species.incubationDays} days',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
+                  Text(widget.species.emoji, style: const TextStyle(fontSize: 28)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.species.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                    ],
+                        Text(
+                          '${widget.eggCount} eggs \u2022 ${widget.species.incubationDays} days',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
+
+            // Checklist
             ...List.generate(_checklistItems.length, (index) {
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.grey.shade100),
                 ),
-                child: CheckboxListTile(
-                  value: _checked[index],
-                  onChanged: (val) {
-                    setState(() {
-                      _checked[index] = val ?? false;
-                    });
-                  },
-                  title: Text(
-                    _checklistItems[index],
-                    style: const TextStyle(fontSize: 14),
-                  ),
-                  activeColor: const Color(0xFFE8752A),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: CheckboxListTile(
+                    value: _checked[index],
+                    onChanged: (val) {
+                      setState(() {
+                        _checked[index] = val ?? false;
+                      });
+                    },
+                    title: Text(
+                      _checklistItems[index],
+                      style: const TextStyle(fontSize: 15),
+                    ),
+                    activeColor: const Color(0xFFE8752A),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12),
                   ),
                 ),
               );
             }),
             const Spacer(),
+
+            // Helper text when incomplete
+            if (!_allChecked)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Please complete the checklist before starting',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ),
+
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: ElevatedButton(
                 onPressed: _allChecked
                     ? () {
@@ -1104,7 +1452,7 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -1120,9 +1468,8 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
             height: 4,
             margin: EdgeInsets.only(right: index < total - 1 ? 8 : 0),
             decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xFFE8752A)
-                  : Colors.grey.shade200,
+              color:
+                  isActive ? const Color(0xFFE8752A) : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1133,7 +1480,7 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
 }
 
 // ══════════════════════════════════════════════
-// INCUBATION STARTED SCREEN
+// INCUBATION STARTED CONFIRMATION
 // ══════════════════════════════════════════════
 
 class IncubationStartedScreen extends StatelessWidget {
@@ -1231,7 +1578,7 @@ class IncubationStartedScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
-                  height: 50,
+                  height: 54,
                   child: ElevatedButton(
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
@@ -1258,21 +1605,30 @@ class IncubationStartedScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ActiveIncubationScreen(),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ActiveIncubationScreen(
+                            species: species,
+                            eggCount: eggCount,
+                            batchId: batchNum,
+                            startDate: now,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'View Incubation',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFFE8752A),
                       ),
-                    );
-                  },
-                  child: const Text(
-                    'View Incubation',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFE8752A),
                     ),
                   ),
                 ),
@@ -1290,78 +1646,294 @@ class IncubationStartedScreen extends StatelessWidget {
 // ══════════════════════════════════════════════
 
 class ActiveIncubationScreen extends StatelessWidget {
-  const ActiveIncubationScreen({super.key});
+  final SpeciesData species;
+  final int eggCount;
+  final String batchId;
+  final DateTime startDate;
+  final int currentDay;
+  const ActiveIncubationScreen({
+    super.key,
+    required this.species,
+    required this.eggCount,
+    required this.batchId,
+    required this.startDate,
+    this.currentDay = 8,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const currentDay = 14;
-    const totalDays = 21;
-    const progress = currentDay / totalDays;
+    final totalDays = species.incubationDays;
+    final progress = currentDay / totalDays;
+    final hatchDate = startDate.add(Duration(days: totalDays));
+    final isComplete = currentDay >= totalDays;
+
+    final statusLabel = isComplete ? 'Completed' : 'On track';
+    final statusColor = isComplete
+        ? const Color(0xFF4CAF50)
+        : const Color(0xFF4CAF50);
+    final statusIcon = isComplete ? Icons.check_circle : Icons.play_circle_fill;
+
+    final startDateStr =
+        '${_monthName(startDate.month)} ${startDate.day}, ${startDate.year}';
+    final hatchDateStr =
+        '${_monthName(hatchDate.month)} ${hatchDate.day}, ${hatchDate.year}';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Active Incubation')),
+      appBar: AppBar(title: const Text('Current Incubation')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ── STATUS BANNER ──
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFE8752A), Color(0xFFF5A623)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFE8752A).withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                color: statusColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: statusColor.withValues(alpha: 0.2)),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  const Text(
-                    'Chicken',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Batch #24',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Day $currentDay of $totalDays',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: Colors.white.withValues(alpha: 0.3),
-                      color: Colors.white,
-                      minHeight: 8,
+                  Icon(statusIcon, color: statusColor, size: 28),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          statusLabel,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                        Text(
+                          isComplete
+                              ? 'Hatching day has arrived!'
+                              : 'Everything is going well',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: statusColor.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const _SectionLabel(text: 'INCUBATION DETAILS'),
+            const SizedBox(height: 20),
+
+            // ── SPECIES + BATCH ──
+            Row(
+              children: [
+                Text(species.emoji, style: const TextStyle(fontSize: 30)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        species.name,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        batchId,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // ── DAY / PROGRESS ──
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Day $currentDay of $totalDays',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).round()}%',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFFE8752A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      backgroundColor: Colors.grey.shade200,
+                      color: const Color(0xFFE8752A),
+                      minHeight: 10,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── TEMPERATURE ──
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8752A).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.thermostat_outlined,
+                      color: Color(0xFFE8752A),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Temperature',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          species.temperature,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${species.temperature}\u00B0',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── EGGS ──
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5A623).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.egg_outlined,
+                      color: Color(0xFFF5A623),
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Eggs',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        Text(
+                          'In incubation',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '$eggCount',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── DATES ──
+            const _SectionLabel(text: 'DATES'),
             const SizedBox(height: 10),
             Container(
               width: double.infinity,
@@ -1371,24 +1943,18 @@ class ActiveIncubationScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: Colors.grey.shade100),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  _DetailRow(label: 'Status', value: 'In Progress'),
-                  SizedBox(height: 12),
-                  _DetailRow(label: 'Number of Eggs', value: '20'),
-                  SizedBox(height: 12),
-                  _DetailRow(label: 'Temperature', value: '37.5°C'),
-                  SizedBox(height: 12),
-                  _DetailRow(label: 'Humidity', value: '55%'),
-                  SizedBox(height: 12),
-                  _DetailRow(label: 'Start Date', value: '2026-04-10'),
-                  SizedBox(height: 12),
-                  _DetailRow(label: 'Expected Hatch', value: '2026-05-01'),
+                  _DetailRow(label: 'Start Date', value: startDateStr),
+                  const SizedBox(height: 12),
+                  _DetailRow(label: 'Expected Hatch', value: hatchDateStr),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            const _SectionLabel(text: 'CONTROLS'),
+            const SizedBox(height: 20),
+
+            // ── ACTION BUTTONS ──
+            const _SectionLabel(text: 'ACTIONS'),
             const SizedBox(height: 10),
             Row(
               children: [
@@ -1399,7 +1965,8 @@ class ActiveIncubationScreen extends StatelessWidget {
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Temperature monitoring will be available in a future version.'),
+                          content: Text(
+                              'Temperature monitoring will be available in a future version.'),
                         ),
                       );
                     },
@@ -1413,7 +1980,8 @@ class ActiveIncubationScreen extends StatelessWidget {
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Egg turning will be available in a future version.'),
+                          content: Text(
+                              'Egg turning will be available in a future version.'),
                         ),
                       );
                     },
@@ -1427,7 +1995,8 @@ class ActiveIncubationScreen extends StatelessWidget {
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Humidity control will be available in a future version.'),
+                          content: Text(
+                              'Humidity control will be available in a future version.'),
                         ),
                       );
                     },
@@ -1438,7 +2007,7 @@ class ActiveIncubationScreen extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: OutlinedButton(
                 onPressed: () {
                   Navigator.pushAndRemoveUntil(
@@ -1465,7 +2034,7 @@ class ActiveIncubationScreen extends StatelessWidget {
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 48,
               child: TextButton(
                 onPressed: () {
                   Navigator.push(
@@ -1490,51 +2059,152 @@ class ActiveIncubationScreen extends StatelessWidget {
       ),
     );
   }
+
+  String _monthName(int month) {
+    const months = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month];
+  }
 }
 
 // ══════════════════════════════════════════════
 // HISTORY SCREEN
 // ══════════════════════════════════════════════
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
   @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<BatchData> get _filteredBatches {
+    if (_searchQuery.isEmpty) return sampleBatches;
+    final q = _searchQuery.toLowerCase();
+    return sampleBatches.where((b) {
+      return b.batchNumber.toLowerCase().contains(q) ||
+          b.species.toLowerCase().contains(q);
+    }).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
+    final batches = _filteredBatches;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Incubation History'),
+        automaticallyImplyLeading: false,
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 8),
             const Text(
-              'History',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Previous incubation batches',
+              'View and search your previous batches.',
               style: TextStyle(fontSize: 14, color: Colors.black54),
             ),
-            const SizedBox(height: 20),
-            ...sampleBatches.map(
-              (batch) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => BatchDetailsScreen(batch: batch),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
+              },
+              style: const TextStyle(fontSize: 15),
+              decoration: InputDecoration(
+                hintText: 'Search batches...',
+                hintStyle: TextStyle(
+                  color: Colors.grey.shade400,
+                  fontSize: 15,
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: Colors.grey.shade400,
+                  size: 22,
+                ),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: Icon(
+                          Icons.clear,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        ),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade200),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                      color: Color(0xFFE8752A), width: 1.5),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (batches.isEmpty) ...[
+              const SizedBox(height: 40),
+              Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.search_off, size: 48, color: Colors.grey.shade300),
+                    const SizedBox(height: 12),
+                    Text(
+                      'No batches found',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade500,
                       ),
-                    );
-                  },
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Try a different search.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ] else
+              ...batches.map(
+                (batch) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: _HistoryBatchCard(
+                    batchNumber: batch.batchNumber,
                     species: batch.species,
                     startDate: batch.startDate,
                     endDate: batch.endDate,
@@ -1545,8 +2215,8 @@ class HistoryScreen extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
           ],
+        ),
         ),
       ),
     );
@@ -1586,8 +2256,8 @@ class BatchDetailsScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child:
-                      Text(speciesData.emoji, style: const TextStyle(fontSize: 44)),
+                  child: Text(speciesData.emoji,
+                      style: const TextStyle(fontSize: 44)),
                 ),
               ),
             ),
@@ -1605,7 +2275,7 @@ class BatchDetailsScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Center(
               child: Text(
-                '${batch.species} • ${batch.status}',
+                '${batch.species} \u2022 ${batch.status}',
                 style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
               ),
             ),
@@ -1626,7 +2296,8 @@ class BatchDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _DetailRow(label: 'Hatch Date', value: batch.endDate),
                   const SizedBox(height: 12),
-                  _DetailRow(label: 'Total Eggs', value: '${batch.eggsTotal}'),
+                  _DetailRow(
+                      label: 'Total Eggs', value: '${batch.eggsTotal}'),
                   const SizedBox(height: 12),
                   _DetailRow(
                       label: 'Hatched', value: '${batch.eggsHatched}'),
@@ -1636,7 +2307,8 @@ class BatchDetailsScreen extends StatelessWidget {
                     value: '${(hatchRate * 100).toStringAsFixed(0)}%',
                   ),
                   const SizedBox(height: 12),
-                  _DetailRow(label: 'Temperature', value: batch.temperature),
+                  _DetailRow(
+                      label: 'Temperature', value: batch.temperature),
                 ],
               ),
             ),
@@ -1653,7 +2325,7 @@ class BatchDetailsScreen extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
@@ -1686,7 +2358,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: const Text('My Profile')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -1846,7 +2518,7 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 54,
                 child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.pushAndRemoveUntil(
@@ -1860,7 +2532,8 @@ class ProfileScreen extends StatelessWidget {
                   icon: const Icon(Icons.logout, size: 20),
                   label: const Text(
                     'Sign Out',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: const Color(0xFFE53935),
@@ -1908,7 +2581,8 @@ class EditProfileScreen extends StatelessWidget {
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Photo upload will be available in a future version.'),
+                    content: Text(
+                        'Photo upload will be available in a future version.'),
                   ),
                 );
               },
@@ -1959,7 +2633,7 @@ class EditProfileScreen extends StatelessWidget {
             const SizedBox(height: 28),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 54,
               child: ElevatedButton(
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -2013,7 +2687,8 @@ class AccountSettingsScreen extends StatelessWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Name editing will be available in a future version.'),
+                    content: Text(
+                        'Name editing will be available in a future version.'),
                   ),
                 );
               },
@@ -2025,7 +2700,8 @@ class AccountSettingsScreen extends StatelessWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Email editing will be available in a future version.'),
+                    content: Text(
+                        'Email editing will be available in a future version.'),
                   ),
                 );
               },
@@ -2039,7 +2715,8 @@ class AccountSettingsScreen extends StatelessWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Cloud backup will be available in a future version.'),
+                    content: Text(
+                        'Cloud backup will be available in a future version.'),
                   ),
                 );
               },
@@ -2050,7 +2727,8 @@ class AccountSettingsScreen extends StatelessWidget {
               onTap: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Data restore will be available in a future version.'),
+                    content: Text(
+                        'Data restore will be available in a future version.'),
                   ),
                 );
               },
@@ -2095,7 +2773,7 @@ class SettingsPlaceholderScreen extends StatelessWidget {
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
-                height: 48,
+                height: 54,
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(context),
                   style: OutlinedButton.styleFrom(
@@ -2152,11 +2830,31 @@ class _HomeHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final months = [
-      '', 'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      '',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    final days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    final dateStr = '${days[now.weekday - 1]}, ${months[now.month]} ${now.day}';
+    final days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final dateStr =
+        '${days[now.weekday - 1]}, ${months[now.month]} ${now.day}';
 
     return Row(
       children: [
@@ -2183,8 +2881,8 @@ class _HomeHeader extends StatelessWidget {
         GestureDetector(
           onTap: onProfileTap,
           child: Container(
-            width: 40,
-            height: 40,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
@@ -2394,9 +3092,11 @@ class _LastBatchCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4CAF50).withValues(alpha: 0.1),
+                  color:
+                      const Color(0xFF4CAF50).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
@@ -2480,78 +3180,6 @@ class _LastBatchCard extends StatelessWidget {
   }
 }
 
-class _StartIncubationCTA extends StatelessWidget {
-  final VoidCallback onTap;
-  const _StartIncubationCTA({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFE8752A), Color(0xFFF5A623)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFE8752A).withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(Icons.add, color: Colors.white, size: 22),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Start New Incubation',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Select species & confirm checklist',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.white.withValues(alpha: 0.8),
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _SpeciesCard extends StatelessWidget {
   final String name;
   final String description;
@@ -2612,7 +3240,8 @@ class _SpeciesCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     description,
-                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    style:
+                        const TextStyle(fontSize: 13, color: Colors.black54),
                   ),
                 ],
               ),
@@ -2626,6 +3255,7 @@ class _SpeciesCard extends StatelessWidget {
 }
 
 class _HistoryBatchCard extends StatelessWidget {
+  final String batchNumber;
   final String species;
   final String startDate;
   final String endDate;
@@ -2635,6 +3265,7 @@ class _HistoryBatchCard extends StatelessWidget {
   final bool isSuccess;
 
   const _HistoryBatchCard({
+    required this.batchNumber,
     required this.species,
     required this.startDate,
     required this.endDate,
@@ -2644,77 +3275,165 @@ class _HistoryBatchCard extends StatelessWidget {
     required this.isSuccess,
   });
 
+  String _formatDate(String dateStr) {
+    final parts = dateStr.split('-');
+    if (parts.length != 3) return dateStr;
+    const months = [
+      '', 'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    final month = int.tryParse(parts[1]) ?? 1;
+    final day = int.tryParse(parts[2]) ?? 1;
+    return '${months[month]} $day, ${parts[0]}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final double hatchRate = eggsTotal > 0 ? eggsHatched / eggsTotal : 0;
+    final percentage = '${(hatchRate * 100).round()}%';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return GestureDetector(
+      onTap: () {
+        final batch = BatchData(
+          batchNumber: batchNumber,
+          species: species,
+          startDate: startDate,
+          endDate: endDate,
+          eggsTotal: eggsTotal,
+          eggsHatched: eggsHatched,
+          temperature: '37.5\u00B0C',
+          status: status,
+          isSuccess: isSuccess,
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => BatchDetailsScreen(batch: batch),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                species,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (isSuccess ? const Color(0xFF4CAF50) : const Color(0xFFE53935))
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  status,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: isSuccess ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade100),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    batchNumber,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$startDate - $endDate',
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: hatchRate,
-              backgroundColor: Colors.grey.shade200,
-              color: const Color(0xFFE8752A),
-              minHeight: 6,
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: (isSuccess
+                            ? const Color(0xFF4CAF50)
+                            : const Color(0xFFE53935))
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                        size: 14,
+                        color: isSuccess
+                            ? const Color(0xFF4CAF50)
+                            : const Color(0xFFE53935),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        status,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSuccess
+                              ? const Color(0xFF4CAF50)
+                              : const Color(0xFFE53935),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$eggsHatched / $eggsTotal eggs hatched (${(hatchRate * 100).toStringAsFixed(0)}%)',
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              species,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '$eggsHatched / $eggsTotal eggs hatched',
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  percentage,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFE8752A),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              _formatDate(startDate),
+              style: const TextStyle(fontSize: 12, color: Colors.black45),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'View details',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: Colors.grey.shade400,
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2749,18 +3468,24 @@ class _ProfileOption extends StatelessWidget {
           ),
         ],
       ),
-      child: ListTile(
-        leading: Icon(icon, color: const Color(0xFFE8752A)),
-        title: Text(
-          title,
-          style: const TextStyle(fontSize: 15, color: Colors.black87),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: ListTile(
+          leading: Icon(icon, color: const Color(0xFFE8752A)),
+          title: Text(
+            title,
+            style: const TextStyle(fontSize: 15, color: Colors.black87),
+          ),
+          subtitle: subtitle != null
+              ? Text(subtitle!, style: const TextStyle(fontSize: 13))
+              : null,
+          trailing:
+              const Icon(Icons.chevron_right, color: Colors.black38),
+          onTap: onTap,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-        subtitle: subtitle != null
-            ? Text(subtitle!, style: const TextStyle(fontSize: 13))
-            : null,
-        trailing: const Icon(Icons.chevron_right, color: Colors.black38),
-        onTap: onTap,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }
@@ -2793,7 +3518,8 @@ class _InfoRow extends StatelessWidget {
           Expanded(
             child: Text(
               label,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style:
+                  TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ),
           Text(
