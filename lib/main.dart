@@ -25,8 +25,21 @@ Future<void> main() async {
 // Root Widget
 // ──────────────────────────────────────────────
 
-class SmartHatchApp extends StatelessWidget {
+class SmartHatchApp extends StatefulWidget {
   const SmartHatchApp({super.key});
+
+  @override
+  State<SmartHatchApp> createState() => _SmartHatchAppState();
+}
+
+class _SmartHatchAppState extends State<SmartHatchApp> {
+  late final Stream<AuthState> _authStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _authStream = Supabase.instance.client.auth.onAuthStateChange;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +61,16 @@ class SmartHatchApp extends StatelessWidget {
           centerTitle: true,
         ),
       ),
-      home: const LandingPage(),
+      home: StreamBuilder<AuthState>(
+        stream: _authStream,
+        builder: (context, snapshot) {
+          final session = snapshot.data?.session;
+          if (session != null) {
+            return const MainNavigation();
+          }
+          return const LandingPage();
+        },
+      ),
     );
   }
 }
@@ -454,6 +476,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _loading = false;
 
   @override
   void dispose() {
@@ -462,20 +485,37 @@ class _SignInScreenState extends State<SignInScreen> {
     super.dispose();
   }
 
-  void _handleSignIn() {
+  Future<void> _handleSignIn() async {
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter email and password')),
       );
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Welcome back!')),
-    );
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
+    setState(() => _loading = true);
+    try {
+      await SupabaseService().signIn(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Welcome back!')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainNavigation()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign in failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -561,7 +601,7 @@ class _SignInScreenState extends State<SignInScreen> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _handleSignIn,
+                  onPressed: _loading ? null : _handleSignIn,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFE8752A),
                     foregroundColor: Colors.white,
@@ -570,12 +610,51 @@ class _SignInScreenState extends State<SignInScreen> {
                     ),
                     elevation: 2,
                   ),
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  child: _loading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const SignUpScreen(),
                     ),
+                  );
+                },
+                child: Text.rich(
+                  TextSpan(
+                    text: "Don't have an account? ",
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                    children: const [
+                      TextSpan(
+                        text: 'Sign Up',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFE8752A),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -584,6 +663,230 @@ class _SignInScreenState extends State<SignInScreen> {
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Back to Landing Page',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════
+// SIGN UP SCREEN
+// ══════════════════════════════════════════════
+
+class SignUpScreen extends StatefulWidget {
+  const SignUpScreen({super.key});
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignUp() async {
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+    if (_passwordController.text.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 6 characters')),
+      );
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      final response = await SupabaseService().signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (mounted) {
+        if (response.user != null && response.session == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account created! Please check your email to verify, then sign in.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account created successfully!')),
+          );
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainNavigation()),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Sign up failed: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Sign Up')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE8752A).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_add_outlined,
+                  size: 40,
+                  color: Color(0xFFE8752A),
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Create Account',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Sign up for SmartHatch',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              ),
+              const SizedBox(height: 32),
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  hintText: 'juan@example.com',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _passwordController,
+                obscureText: _obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _confirmPasswordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Confirm Password',
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _handleSignUp,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFE8752A),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.5,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Sign Up',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Back to Sign In',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade500,
@@ -685,7 +988,12 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load data: $e')),
+        );
+      }
     }
   }
 
@@ -865,7 +1173,12 @@ class _SpeciesScreenState extends State<SpeciesScreen> {
         setState(() => _loading = false);
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load species: $e')),
+        );
+      }
     }
   }
 
@@ -1050,7 +1363,13 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
           _speciesList = presets.map((p) => SpeciesData.fromPreset(p)).toList();
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load species: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -2280,7 +2599,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load history: $e')),
+        );
+      }
     }
   }
 
@@ -2559,6 +2883,9 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final email = SupabaseService().userEmail ?? 'No email';
+    final displayName = email.split('@').first;
+
     return Scaffold(
       appBar: AppBar(title: const Text('My Profile')),
       body: SafeArea(
@@ -2576,20 +2903,20 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Center(
+              Center(
                 child: Text(
-                  'Juan Dela Cruz',
-                  style: TextStyle(
+                  displayName[0].toUpperCase() + displayName.substring(1),
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
                 ),
               ),
-              const Center(
+              Center(
                 child: Text(
-                  'juan@example.com',
-                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                  email,
+                  style: const TextStyle(fontSize: 14, color: Colors.black54),
                 ),
               ),
               const SizedBox(height: 24),
@@ -2718,11 +3045,12 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: OutlinedButton.icon(
-                  onPressed: () {
+              _ProfileOption(
+                icon: Icons.logout,
+                title: 'Sign Out',
+                onTap: () async {
+                  await SupabaseService().signOut();
+                  if (context.mounted) {
                     Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
@@ -2730,21 +3058,8 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       (route) => false,
                     );
-                  },
-                  icon: const Icon(Icons.logout, size: 20),
-                  label: const Text(
-                    'Sign Out',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53935),
-                    side: const BorderSide(color: Color(0xFFE53935)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
+                  }
+                },
               ),
               const SizedBox(height: 24),
             ],
@@ -2764,6 +3079,8 @@ class EditProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final email = SupabaseService().userEmail ?? 'No email';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Edit Profile')),
       body: SingleChildScrollView(
@@ -2796,35 +3113,9 @@ class EditProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             TextField(
               decoration: InputDecoration(
-                labelText: 'Full Name',
-                hintText: 'Juan Dela Cruz',
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
                 labelText: 'Email',
-                hintText: 'juan@example.com',
+                hintText: email,
                 prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Phone',
-                hintText: '+63 912 345 6789',
-                prefixIcon: const Icon(Icons.phone_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2873,6 +3164,8 @@ class AccountSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final email = SupabaseService().userEmail ?? 'No email';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Account')),
       body: SingleChildScrollView(
@@ -2884,29 +3177,9 @@ class AccountSettingsScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _ProfileOption(
               icon: Icons.person_outline,
-              title: 'Name',
-              subtitle: 'Juan Dela Cruz',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Name editing will be available in a future version.'),
-                  ),
-                );
-              },
-            ),
-            _ProfileOption(
-              icon: Icons.email_outlined,
               title: 'Email',
-              subtitle: 'juan@example.com',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Email editing will be available in a future version.'),
-                  ),
-                );
-              },
+              subtitle: email,
+              onTap: () {},
             ),
             const SizedBox(height: 16),
             const _SectionLabel(text: 'DATA'),
