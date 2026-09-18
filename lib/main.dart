@@ -1894,7 +1894,17 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                           final now = DateTime.now();
                           final tempNum = double.tryParse(
                             widget.species.temperature.replaceAll(RegExp(r'[^0-9.]'), ''),
+                          ) ?? 37.5;
+
+                          // 1. Update active_settings with current config
+                          await service.updateActiveSettings(
+                            eggType: widget.species.name,
+                            temperature: tempNum,
+                            humidity: 55,
+                            incubationDays: widget.species.incubationDays,
                           );
+
+                          // 2. Create the incubation session
                           final sessionId = await service.createSession(
                             eggType: widget.species.name,
                             startDate: now,

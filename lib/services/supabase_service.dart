@@ -47,6 +47,40 @@ class SupabaseService {
     return response;
   }
 
+  // ── Active Settings ──
+
+  Future<void> updateActiveSettings({
+    required String eggType,
+    required double temperature,
+    required int humidity,
+    required int incubationDays,
+  }) async {
+    final existing = await _client
+        .from('active_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle();
+
+    if (existing != null) {
+      await _client
+          .from('active_settings')
+          .update({
+            'egg_type': eggType,
+            'target_temperature': temperature,
+            'target_humidity': humidity,
+            'incubation_days': incubationDays,
+          })
+          .eq('id', existing['id']);
+    } else {
+      await _client.from('active_settings').insert({
+        'egg_type': eggType,
+        'target_temperature': temperature,
+        'target_humidity': humidity,
+        'incubation_days': incubationDays,
+      });
+    }
+  }
+
   // ── Incubation Sessions ──
 
   Future<int> createSession({
