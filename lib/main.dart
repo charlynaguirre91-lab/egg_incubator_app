@@ -63,6 +63,8 @@ class SmartHatchApp extends StatelessWidget {
 // MOCK DATA
 // ══════════════════════════════════════════════
 
+enum AlertMode { normal, temperature, humidity, incubator, eggTurning }
+
 class SpeciesData {
   final int? id;
   final String name;
@@ -383,7 +385,7 @@ class _LandingPageState extends State<LandingPage> {
                           child: Text(
                             _currentPage < _slides.length - 1 ? 'Next' : 'Get Started',
                             style: const TextStyle(
-                              fontSize: 17,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -552,7 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             SizedBox(
               width: double.infinity,
-              height: 58,
+              height: 54,
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -566,20 +568,20 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: const Color(0xFFE8752A),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  elevation: 3,
+                  elevation: 2,
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.add, size: 24),
+                    Icon(Icons.add, size: 22),
                     SizedBox(width: 10),
                     Text(
                       'Start New Incubation',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -723,8 +725,10 @@ class _SpeciesScreenState extends State<SpeciesScreen> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: _SpeciesCard(
                       name: species.name,
-                      description: '${species.incubationDays} days incubation period',
+                      description: species.description,
                       emoji: species.emoji,
+                      incubationDays: species.incubationDays,
+                      temperature: species.temperature,
                       onTap: () {
                         Navigator.push(
                           context,
@@ -763,14 +767,14 @@ class SpeciesDetailsScreen extends StatelessWidget {
           children: [
             Center(
               child: Container(
-                width: 100,
-                height: 100,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   color: const Color(0xFFE8752A).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
-                  child: Text(species.emoji, style: const TextStyle(fontSize: 52)),
+                  child: Text(species.emoji, style: const TextStyle(fontSize: 44)),
                 ),
               ),
             ),
@@ -934,7 +938,9 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
                     duration: const Duration(milliseconds: 200),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: isSelected
+                          ? const Color(0xFFFDF3EC)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
                         color: isSelected
@@ -953,6 +959,7 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
                       ],
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
                           width: 56,
@@ -970,7 +977,7 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -985,23 +992,46 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
                                       : Colors.black87,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 5),
+                              Row(
+                                children: [
+                                  _InfoChip(
+                                    icon: Icons.calendar_today_rounded,
+                                    label: '${species.incubationDays} days',
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _InfoChip(
+                                    icon: Icons.thermostat,
+                                    label: species.temperature,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
                               Text(
-                                '${species.incubationDays} days incubation',
+                                species.description,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    fontSize: 13, color: Colors.black54),
+                                  fontSize: 13,
+                                  color: Colors.black54,
+                                  height: 1.3,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle,
-                            color: Color(0xFFE8752A),
-                            size: 24,
-                          )
-                        else
-                          const Icon(Icons.chevron_right, color: Colors.black38),
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: isSelected
+                              ? const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFFE8752A),
+                                  size: 24,
+                                )
+                              : const Icon(Icons.chevron_right,
+                                  color: Colors.black38),
+                        ),
                       ],
                     ),
                   ),
@@ -1226,6 +1256,41 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
   }
 }
 
+// ── Small info chip (calendar / thermostat) ──
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF5F6FA),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: Colors.black45),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Colors.black54,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Large counter +/- button ──
 
 class _CounterButton extends StatelessWidget {
@@ -1356,8 +1421,8 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                 margin: const EdgeInsets.only(bottom: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade100),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey.shade100),
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -1496,6 +1561,14 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
 // INCUBATION STARTED CONFIRMATION
 // ══════════════════════════════════════════════
 
+String _monthNameShort(int month) {
+  const months = [
+    '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+  return months[month];
+}
+
 class IncubationStartedScreen extends StatelessWidget {
   final SpeciesData species;
   final int eggCount;
@@ -1577,12 +1650,12 @@ class IncubationStartedScreen extends StatelessWidget {
                       _DetailRow(
                           label: 'Start Date',
                           value:
-                              '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}'),
+                              '${_monthNameShort(now.month)} ${now.day}, ${now.year}'),
                       const SizedBox(height: 12),
                       _DetailRow(
                           label: 'Expected Hatch',
                           value:
-                              '${hatchDate.year}-${hatchDate.month.toString().padLeft(2, '0')}-${hatchDate.day.toString().padLeft(2, '0')}'),
+                              '${_monthNameShort(hatchDate.month)} ${hatchDate.day}, ${hatchDate.year}'),
                       const SizedBox(height: 12),
                       _DetailRow(
                           label: 'Temperature',
@@ -1661,7 +1734,7 @@ class IncubationStartedScreen extends StatelessWidget {
 // ACTIVE INCUBATION SCREEN
 // ══════════════════════════════════════════════
 
-class ActiveIncubationScreen extends StatelessWidget {
+class ActiveIncubationScreen extends StatefulWidget {
   final SpeciesData species;
   final int eggCount;
   final String batchId;
@@ -1679,7 +1752,22 @@ class ActiveIncubationScreen extends StatelessWidget {
   });
 
   @override
+  State<ActiveIncubationScreen> createState() => _ActiveIncubationScreenState();
+}
+
+class _ActiveIncubationScreenState extends State<ActiveIncubationScreen> {
+  bool _fanOn = true;
+  bool _eggTurningOn = true;
+  bool _temperatureAuto = true;
+  final AlertMode _alertMode = AlertMode.normal;
+
+  @override
   Widget build(BuildContext context) {
+    final species = widget.species;
+    final eggCount = widget.eggCount;
+    final batchId = widget.batchId;
+    final startDate = widget.startDate;
+    final currentDay = widget.currentDay;
     final totalDays = species.incubationDays;
     final progress = currentDay / totalDays;
     final hatchDate = startDate.add(Duration(days: totalDays));
@@ -1739,6 +1827,84 @@ class ActiveIncubationScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── INCUBATOR STATUS ──
+            const _SectionLabel(text: 'INCUBATOR STATUS'),
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(14),
+                border:
+                    Border.all(color: const Color(0xFF4CAF50).withValues(alpha: 0.18)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Color(0xFF4CAF50),
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Incubator is working normally',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF4CAF50),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  _StatusIndicatorRow(
+                    icon: Icons.thermostat,
+                    label: 'Temperature',
+                    statusText: _temperatureAuto ? 'Normal' : 'Manual',
+                    statusColor: const Color(0xFF4CAF50),
+                  ),
+                  const SizedBox(height: 10),
+                  _StatusIndicatorRow(
+                    icon: Icons.water_drop_outlined,
+                    label: 'Humidity',
+                    statusText: 'Normal',
+                    statusColor: const Color(0xFF4CAF50),
+                  ),
+                  const SizedBox(height: 10),
+                  _StatusIndicatorRow(
+                    icon: Icons.air,
+                    label: 'Fan',
+                    statusText: _fanOn ? 'On' : 'Off',
+                    statusColor:
+                        _fanOn ? const Color(0xFF4CAF50) : Colors.grey.shade500,
+                  ),
+                  const SizedBox(height: 10),
+                  _StatusIndicatorRow(
+                    icon: Icons.sync,
+                    label: 'Egg Turning',
+                    statusText: _eggTurningOn ? 'On' : 'Off',
+                    statusColor: _eggTurningOn
+                        ? const Color(0xFF4CAF50)
+                        : Colors.grey.shade500,
+                  ),
+                  const SizedBox(height: 10),
+                  _StatusIndicatorRow(
+                    icon: Icons.wifi,
+                    label: 'Connection',
+                    statusText: 'Connected',
+                    statusColor: const Color(0xFF4CAF50),
                   ),
                 ],
               ),
@@ -1837,6 +2003,12 @@ class ActiveIncubationScreen extends StatelessWidget {
                   ) ??
                   37.5,
             ),
+            const SizedBox(height: 20),
+
+            // ── HUMIDITY GAUGE ──
+            const HumidityGauge(
+              currentHumidity: 55.0,
+            ),
             const SizedBox(height: 16),
 
             // ── EGGS ──
@@ -1920,57 +2092,41 @@ class ActiveIncubationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // ── ACTION BUTTONS ──
-            const _SectionLabel(text: 'ACTIONS'),
+            // ── INCUBATION CONTROLS ──
+            const _SectionLabel(text: 'INCUBATION CONTROLS'),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _ActionGridCard(
-                    icon: Icons.thermostat_outlined,
-                    label: 'Temperature',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Temperature monitoring will be available in a future version.'),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ActionGridCard(
-                    icon: Icons.refresh,
-                    label: 'Turn Eggs',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Egg turning will be available in a future version.'),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _ActionGridCard(
-                    icon: Icons.water_drop_outlined,
-                    label: 'Humidity',
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                              'Humidity control will be available in a future version.'),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+            _IncubationControlTile(
+              icon: Icons.air,
+              label: 'Fan',
+              subtitle: _fanOn ? 'Circulating air' : 'Off',
+              isOn: _fanOn,
+              onToggle: () => setState(() => _fanOn = !_fanOn),
             ),
+            const SizedBox(height: 10),
+            _IncubationControlTile(
+              icon: Icons.sync,
+              label: 'Egg Turning',
+              subtitle: _eggTurningOn ? 'Automatic' : 'Manual',
+              isOn: _eggTurningOn,
+              onToggle: () => setState(() => _eggTurningOn = !_eggTurningOn),
+            ),
+            const SizedBox(height: 10),
+            _IncubationControlTile(
+              icon: Icons.thermostat,
+              label: 'Temperature',
+              subtitle: _temperatureAuto ? 'Automatic' : 'Manual',
+              isOn: _temperatureAuto,
+              onToggle: () =>
+                  setState(() => _temperatureAuto = !_temperatureAuto),
+            ),
+            const SizedBox(height: 10),
+
+            // ── ALERTS & REMINDERS ──
+            const _SectionLabel(text: 'ALERTS & REMINDERS'),
+            const SizedBox(height: 10),
+            _buildAlertCard(),
+            const SizedBox(height: 10),
+
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -2025,6 +2181,50 @@ class ActiveIncubationScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAlertCard() {
+    switch (_alertMode) {
+      case AlertMode.normal:
+        return _AlertCard(
+          icon: Icons.check_circle_outline,
+          title: 'Everything looks good',
+          message: 'Your incubation is on track. No issues right now.',
+          accentColor: const Color(0xFF4CAF50),
+        );
+      case AlertMode.temperature:
+        return _AlertCard(
+          icon: Icons.thermostat,
+          title: 'Temperature needs attention',
+          message:
+              'The temperature is outside the recommended range. Check the incubator settings.',
+          accentColor: const Color(0xFFFF9800),
+        );
+      case AlertMode.humidity:
+        return _AlertCard(
+          icon: Icons.water_drop_outlined,
+          title: 'Humidity needs attention',
+          message:
+              'The humidity is outside the recommended range. Check the water tray.',
+          accentColor: const Color(0xFFFF9800),
+        );
+      case AlertMode.incubator:
+        return _AlertCard(
+          icon: Icons.warning_amber_rounded,
+          title: 'Check the incubator',
+          message:
+              'Something may need your attention. Open the incubator and inspect.',
+          accentColor: const Color(0xFFE8752A),
+        );
+      case AlertMode.eggTurning:
+        return _AlertCard(
+          icon: Icons.sync,
+          title: 'Time to check egg turning',
+          message:
+              'Make sure the eggs are being turned as scheduled.',
+          accentColor: const Color(0xFF2196F3),
+        );
+    }
   }
 
   String _monthName(int month) {
@@ -2179,10 +2379,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Center(
                 child: Column(
                   children: [
-                    Icon(Icons.search_off, size: 48, color: Colors.grey.shade300),
+                    Icon(
+                      _searchQuery.isEmpty
+                          ? Icons.egg_outlined
+                          : Icons.search_off,
+                      size: 48,
+                      color: Colors.grey.shade300,
+                    ),
                     const SizedBox(height: 12),
                     Text(
-                      'No batches found',
+                      _searchQuery.isEmpty
+                          ? 'No batches yet'
+                          : 'No batches found',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -2191,7 +2399,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Try a different search.',
+                      _searchQuery.isEmpty
+                          ? 'Start your first incubation!'
+                          : 'Try a different search.',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.grey.shade400,
@@ -2698,7 +2908,7 @@ class SettingsPlaceholderScreen extends StatelessWidget {
                   child: const Text(
                     'Back',
                     style: TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -2961,6 +3171,255 @@ class TemperatureGauge extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════
+// HUMIDITY GAUGE
+// ══════════════════════════════════════════════
+
+class _HumidityGaugePainter extends CustomPainter {
+  final double normalizedValue; // 0.0 (min) to 1.0 (max)
+
+  _HumidityGaugePainter({required this.normalizedValue});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height);
+    final radius = size.width / 2 - 8;
+    const startAngle = 3.14159; // π (left)
+    const sweepAngle = 3.14159; // π (half circle)
+    const strokeWidth = 14.0;
+
+    // Background arc (full range)
+    final bgPaint = Paint()
+      ..color = const Color(0xFFE0E0E0)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      sweepAngle,
+      false,
+      bgPaint,
+    );
+
+    // Ideal range arc (green zone: 50%–60%)
+    final idealStart = 0.5;
+    final idealEnd = 0.6;
+    final idealPaint = Paint()
+      ..color = const Color(0xFF4CAF50).withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle + idealStart * sweepAngle,
+      (idealEnd - idealStart) * sweepAngle,
+      false,
+      idealPaint,
+    );
+
+    // Value arc
+    final clampedValue = normalizedValue.clamp(0.0, 1.0);
+    final valuePaint = Paint()
+      ..color = _getHumidityColor(clampedValue)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius),
+      startAngle,
+      clampedValue * sweepAngle,
+      false,
+      valuePaint,
+    );
+
+    // Needle dot
+    final needleAngle = startAngle + clampedValue * sweepAngle;
+    final needleX = center.dx + radius * cos(needleAngle);
+    final needleY = center.dy + radius * sin(needleAngle);
+    final dotPaint = Paint()
+      ..color = _getHumidityColor(clampedValue)
+      ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(needleX, needleY), 6, dotPaint);
+    canvas.drawCircle(
+      Offset(needleX, needleY),
+      3,
+      Paint()..color = Colors.white,
+    );
+  }
+
+  static Color _getHumidityColor(double normalized) {
+    if (normalized < 0.45) return const Color(0xFF2196F3); // Blue - too low
+    if (normalized > 0.65) return const Color(0xFFFF9800); // Orange - too high
+    return const Color(0xFF4CAF50); // Green - ideal
+  }
+
+  @override
+  bool shouldRepaint(covariant _HumidityGaugePainter oldDelegate) {
+    return oldDelegate.normalizedValue != normalizedValue;
+  }
+}
+
+class HumidityGauge extends StatelessWidget {
+  final double currentHumidity;
+  final double minHumidity;
+  final double maxHumidity;
+  final double idealMin;
+  final double idealMax;
+
+  const HumidityGauge({
+    super.key,
+    required this.currentHumidity,
+    this.minHumidity = 0.0,
+    this.maxHumidity = 100.0,
+    this.idealMin = 50.0,
+    this.idealMax = 60.0,
+  });
+
+  String get _statusText {
+    if (currentHumidity >= idealMin && currentHumidity <= idealMax) {
+      return 'Within the recommended range';
+    } else if (currentHumidity < idealMin) {
+      return 'Below recommended range';
+    } else {
+      return 'Above recommended range';
+    }
+  }
+
+  Color get _statusColor {
+    if (currentHumidity >= idealMin && currentHumidity <= idealMax) {
+      return const Color(0xFF4CAF50);
+    } else if (currentHumidity < idealMin) {
+      return const Color(0xFF2196F3);
+    } else {
+      return const Color(0xFFFF9800);
+    }
+  }
+
+  IconData get _statusIcon {
+    if (currentHumidity >= idealMin && currentHumidity <= idealMax) {
+      return Icons.check_circle_outline;
+    } else if (currentHumidity < idealMin) {
+      return Icons.arrow_downward;
+    } else {
+      return Icons.arrow_upward;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final normalized =
+        ((currentHumidity - minHumidity) / (maxHumidity - minHumidity))
+            .clamp(0.0, 1.0);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Header row
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2196F3).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.water_drop,
+                  color: Color(0xFF2196F3),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Humidity',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Gauge
+          SizedBox(
+            width: 180,
+            height: 100,
+            child: CustomPaint(
+              painter: _HumidityGaugePainter(normalizedValue: normalized),
+            ),
+          ),
+          const SizedBox(height: 8),
+
+          // Humidity value
+          Text(
+            '${currentHumidity.toStringAsFixed(0)}%',
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 6),
+
+          // Status
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: _statusColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(_statusIcon, size: 16, color: _statusColor),
+                const SizedBox(width: 6),
+                Text(
+                  _statusText,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: _statusColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // Recommended range
+          Text(
+            'Recommended: ${idealMin.toStringAsFixed(0)}% – ${idealMax.toStringAsFixed(0)}%',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════
 // REUSABLE WIDGETS
 // ══════════════════════════════════════════════
 
@@ -3144,10 +3603,10 @@ class _OverviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
@@ -3176,7 +3635,7 @@ class _OverviewCard extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 9,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade500,
               letterSpacing: 0.3,
@@ -3186,7 +3645,7 @@ class _OverviewCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               supportingText,
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade400),
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
             ),
           ],
         ],
@@ -3293,7 +3752,7 @@ class _LastBatchCard extends StatelessWidget {
                     Text(
                       'RESULT',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade500,
                         letterSpacing: 0.5,
@@ -3324,7 +3783,7 @@ class _LastBatchCard extends StatelessWidget {
                     Text(
                       'AVG TEMP',
                       style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade500,
                         letterSpacing: 0.5,
@@ -3354,12 +3813,16 @@ class _SpeciesCard extends StatelessWidget {
   final String name;
   final String description;
   final String emoji;
+  final int incubationDays;
+  final String temperature;
   final VoidCallback onTap;
 
   const _SpeciesCard({
     required this.name,
     required this.description,
     required this.emoji,
+    required this.incubationDays,
+    required this.temperature,
     required this.onTap,
   });
 
@@ -3382,10 +3845,11 @@ class _SpeciesCard extends StatelessWidget {
           ],
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 52,
-              height: 52,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 color: const Color(0xFFE8752A).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -3394,7 +3858,7 @@ class _SpeciesCard extends StatelessWidget {
                 child: Text(emoji, style: const TextStyle(fontSize: 28)),
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -3407,16 +3871,39 @@ class _SpeciesCard extends StatelessWidget {
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      _InfoChip(
+                        icon: Icons.calendar_today_rounded,
+                        label: '$incubationDays days',
+                      ),
+                      const SizedBox(width: 8),
+                      _InfoChip(
+                        icon: Icons.thermostat,
+                        label: temperature,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
                   Text(
                     description,
-                    style:
-                        const TextStyle(fontSize: 13, color: Colors.black54),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.black38),
+            const SizedBox(width: 8),
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(Icons.chevron_right, color: Colors.black38),
+            ),
           ],
         ),
       ),
@@ -3583,7 +4070,7 @@ class _HistoryBatchCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               _formatDate(startDate),
-              style: const TextStyle(fontSize: 12, color: Colors.black45),
+              style: const TextStyle(fontSize: 13, color: Colors.black54),
             ),
             const SizedBox(height: 10),
             Row(
@@ -3594,14 +4081,14 @@ class _HistoryBatchCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade500,
+                    color: const Color(0xFFE8752A),
                   ),
                 ),
                 const SizedBox(width: 4),
-                Icon(
+                const Icon(
                   Icons.chevron_right,
+                  color: Color(0xFFE8752A),
                   size: 18,
-                  color: Colors.grey.shade400,
                 ),
               ],
             ),
@@ -3628,7 +4115,7 @@ class _ProfileOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
@@ -3737,27 +4224,144 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-class _ActionGridCard extends StatelessWidget {
+class _AlertCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String message;
+  final Color accentColor;
+
+  const _AlertCard({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: accentColor, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: accentColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusIndicatorRow extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final String statusText;
+  final Color statusColor;
 
-  const _ActionGridCard({
+  const _StatusIndicatorRow({
     required this.icon,
     required this.label,
-    required this.onTap,
+    required this.statusText,
+    required this.statusColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: statusColor),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Colors.black87,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            statusText,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: statusColor,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _IncubationControlTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final bool isOn;
+  final VoidCallback onToggle;
+
+  const _IncubationControlTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.isOn,
+    required this.onToggle,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 18),
+      onTap: onToggle,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isOn
+              ? const Color(0xFFE8752A).withValues(alpha: 0.06)
+              : Colors.white,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade100),
+          border: Border.all(
+            color: isOn
+                ? const Color(0xFFE8752A).withValues(alpha: 0.25)
+                : Colors.grey.shade100,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
@@ -3766,16 +4370,83 @@ class _ActionGridCard extends StatelessWidget {
             ),
           ],
         ),
-        child: Column(
+        child: Row(
           children: [
-            Icon(icon, color: const Color(0xFFE8752A), size: 28),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: isOn
+                    ? const Color(0xFFE8752A).withValues(alpha: 0.12)
+                    : Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                icon,
+                size: 22,
+                color: isOn ? const Color(0xFFE8752A) : Colors.grey.shade400,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isOn
+                          ? const Color(0xFFE8752A)
+                          : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 50,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isOn ? const Color(0xFFE8752A) : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Stack(
+                alignment: isOn ? Alignment.centerRight : Alignment.centerLeft,
+                children: [
+                  AnimatedPadding(
+                    duration: const Duration(milliseconds: 200),
+                    padding: EdgeInsets.only(
+                      left: isOn ? 24 : 4,
+                      right: isOn ? 4 : 24,
+                    ),
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
