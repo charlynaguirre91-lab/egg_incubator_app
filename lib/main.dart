@@ -19,6 +19,11 @@ Future<void> main() async {
     publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
+  final session = Supabase.instance.client.auth.currentSession;
+  if (session == null) {
+    await Supabase.instance.client.auth.signInAnonymously();
+  }
+
   runApp(const SmartHatchApp());
 }
 
@@ -386,36 +391,7 @@ class _LandingPageState extends State<LandingPage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Sign in link
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const SignInScreen(),
-                            ),
-                          );
-                        },
-                        child: Text.rich(
-                          TextSpan(
-                            text: 'Already have an account? ',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade500,
-                            ),
-                            children: const [
-                              TextSpan(
-                                text: 'Sign in',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFFE8752A),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                      // Sign in link removed — no auth required
                     ],
                   ),
                 ),
@@ -438,165 +414,6 @@ class _OnboardingSlide {
     required this.title,
     required this.body,
   });
-}
-
-// ══════════════════════════════════════════════
-// SIGN IN SCREEN
-// ══════════════════════════════════════════════
-
-class SignInScreen extends StatefulWidget {
-  const SignInScreen({super.key});
-
-  @override
-  State<SignInScreen> createState() => _SignInScreenState();
-}
-
-class _SignInScreenState extends State<SignInScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  void _handleSignIn() {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Welcome back!')),
-    );
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const MainNavigation()),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Sign In')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8752A).withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.person_outline,
-                  size: 40,
-                  color: Color(0xFFE8752A),
-                ),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Welcome Back',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Sign in to your SmartHatch account',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'juan@example.com',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                decoration: InputDecoration(
-                  labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _handleSignIn,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE8752A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: const Text(
-                    'Sign In',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Back to Landing Page',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ══════════════════════════════════════════════
@@ -686,7 +503,12 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load data: $e')),
+        );
+      }
     }
   }
 
@@ -866,7 +688,12 @@ class _SpeciesScreenState extends State<SpeciesScreen> {
         setState(() => _loading = false);
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load species: $e')),
+        );
+      }
     }
   }
 
@@ -1051,7 +878,13 @@ class _IncubationSetupScreenState extends State<IncubationSetupScreen> {
           _speciesList = presets.map((p) => SpeciesData.fromPreset(p)).toList();
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load species: $e')),
+        );
+      }
+    }
   }
 
   @override
@@ -1576,7 +1409,17 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                           final now = DateTime.now();
                           final tempNum = double.tryParse(
                             widget.species.temperature.replaceAll(RegExp(r'[^0-9.]'), ''),
+                          ) ?? 37.5;
+
+                          // 1. Update active_settings with current config
+                          await service.updateActiveSettings(
+                            eggType: widget.species.name,
+                            temperature: tempNum,
+                            humidity: 55,
+                            incubationDays: widget.species.incubationDays,
                           );
+
+                          // 2. Create the incubation session
                           final sessionId = await service.createSession(
                             eggType: widget.species.name,
                             startDate: now,
@@ -2232,7 +2075,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not load history: $e')),
+        );
+      }
     }
   }
 
@@ -2530,18 +2378,12 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 12),
               const Center(
                 child: Text(
-                  'Juan Dela Cruz',
+                  'SmartHatch User',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
                   ),
-                ),
-              ),
-              const Center(
-                child: Text(
-                  'juan@example.com',
-                  style: TextStyle(fontSize: 14, color: Colors.black54),
                 ),
               ),
               const SizedBox(height: 24),
@@ -2669,35 +2511,6 @@ class ProfileScreen extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                height: 54,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LandingPage(),
-                      ),
-                      (route) => false,
-                    );
-                  },
-                  icon: const Icon(Icons.logout, size: 20),
-                  label: const Text(
-                    'Sign Out',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFFE53935),
-                    side: const BorderSide(color: Color(0xFFE53935)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                ),
-              ),
               const SizedBox(height: 24),
             ],
           ),
@@ -2748,35 +2561,9 @@ class EditProfileScreen extends StatelessWidget {
             const SizedBox(height: 16),
             TextField(
               decoration: InputDecoration(
-                labelText: 'Full Name',
-                hintText: 'Juan Dela Cruz',
-                prefixIcon: const Icon(Icons.person_outline),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Email',
-                hintText: 'juan@example.com',
-                prefixIcon: const Icon(Icons.email_outlined),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                filled: true,
-                fillColor: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              decoration: InputDecoration(
-                labelText: 'Phone',
-                hintText: '+63 912 345 6789',
-                prefixIcon: const Icon(Icons.phone_outlined),
+                labelText: 'Display Name',
+                hintText: 'SmartHatch User',
+                prefixIcon: const Icon(Icons.person_outlined),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -2832,35 +2619,6 @@ class AccountSettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionLabel(text: 'ACCOUNT INFORMATION'),
-            const SizedBox(height: 10),
-            _ProfileOption(
-              icon: Icons.person_outline,
-              title: 'Name',
-              subtitle: 'Juan Dela Cruz',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Name editing will be available in a future version.'),
-                  ),
-                );
-              },
-            ),
-            _ProfileOption(
-              icon: Icons.email_outlined,
-              title: 'Email',
-              subtitle: 'juan@example.com',
-              onTap: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Email editing will be available in a future version.'),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
             const _SectionLabel(text: 'DATA'),
             const SizedBox(height: 10),
             _ProfileOption(
