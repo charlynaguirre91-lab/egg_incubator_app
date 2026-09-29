@@ -447,7 +447,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: _TabShell(child: _screens[_currentIndex]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
@@ -478,6 +478,22 @@ class _MainNavigationState extends State<MainNavigation> {
       ),
     );
   }
+}
+
+/// Marks the bottom-navigation shell so the screens inside it can tell that
+/// they are a tab rather than a screen that was pushed onto the navigator.
+/// Tabs are switched with the bottom bar and must not offer a back arrow;
+/// the same screen opened from somewhere else must show one so the user can
+/// return to where they came from (issue #12).
+class _TabShell extends InheritedWidget {
+  const _TabShell({required super.child});
+
+  /// True when [context] belongs to a screen rendered inside the shell.
+  static bool isTab(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_TabShell>() != null;
+
+  @override
+  bool updateShouldNotify(_TabShell oldWidget) => false;
 }
 
 // ══════════════════════════════════════════════
@@ -710,7 +726,9 @@ class _SpeciesScreenState extends State<SpeciesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Egg Species'),
-        automaticallyImplyLeading: false,
+        // Same as the History tab: no arrow inside the bottom-navigation
+        // shell, one when the screen was pushed (e.g. "Top Species" card).
+        automaticallyImplyLeading: !_TabShell.isTab(context),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -2306,7 +2324,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Incubation History'),
-        automaticallyImplyLeading: false,
+        // As a bottom-navigation tab this screen is switched with the bottom
+        // bar (nothing to pop); opened from somewhere else - the overview
+        // cards on Home or the "View History" button - it needs the arrow so
+        // the user can go back to where they came from (issue #12).
+        automaticallyImplyLeading: !_TabShell.isTab(context),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
