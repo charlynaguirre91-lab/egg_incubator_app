@@ -2787,8 +2787,41 @@ class _BatchDetailsScreenState extends State<BatchDetailsScreen> {
 // PROFILE SCREEN
 // ══════════════════════════════════════════════
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class ProfileScreen extends StatefulWidget {
+  /// Optional service override, used by widget tests.
+  const ProfileScreen({super.key, this.service});
+
+  final SupabaseService? service;
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  static const String _fallbackName = 'SmartHatch User';
+
+  late final SupabaseService _service;
+  String _displayName = _fallbackName;
+
+  @override
+  void initState() {
+    super.initState();
+    _service = widget.service ?? SupabaseService();
+    _displayName = _service.getDisplayName() ?? _fallbackName;
+  }
+
+  Future<void> _openEditProfile() async {
+    final updated = await Navigator.push<String>(
+      context,
+      MaterialPageRoute<String>(
+        builder: (_) => EditProfileScreen(service: _service),
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _displayName = updated ?? _service.getDisplayName() ?? _fallbackName;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2809,10 +2842,11 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Center(
+              Center(
                 child: Text(
-                  'SmartHatch User',
-                  style: TextStyle(
+                  _displayName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.black87,
@@ -2825,14 +2859,7 @@ class ProfileScreen extends StatelessWidget {
               _ProfileOption(
                 icon: Icons.edit_outlined,
                 title: 'Edit Profile',
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const EditProfileScreen(),
-                    ),
-                  );
-                },
+                onTap: _openEditProfile,
               ),
               _ProfileOption(
                 icon: Icons.person_outline,
@@ -2957,8 +2984,62 @@ class ProfileScreen extends StatelessWidget {
 // EDIT PROFILE SCREEN
 // ══════════════════════════════════════════════
 
-class EditProfileScreen extends StatelessWidget {
-  const EditProfileScreen({super.key});
+class EditProfileScreen extends StatefulWidget {
+  /// Optional service override, used by widget tests.
+  const EditProfileScreen({super.key, this.service});
+
+  final SupabaseService? service;
+
+  @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  late final SupabaseService _service;
+  late final TextEditingController _nameController;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _service = widget.service ?? SupabaseService();
+    _nameController = TextEditingController(
+      text: _service.getDisplayName() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveChanges() async {
+    final name = _nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Display name cannot be empty.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      final saved = await _service.updateDisplayName(name);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated!')),
+      );
+      Navigator.pop(context, saved);
+    } catch (error) {
+      if (!mounted) return;
+      // Surface the failure instead of pretending the profile was saved.
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save profile: $error')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2993,10 +3074,13 @@ class EditProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextField(
+              controller: _nameController,
+              maxLength: 40,
               decoration: InputDecoration(
                 labelText: 'Display Name',
                 hintText: 'SmartHatch User',
                 prefixIcon: const Icon(Icons.person_outlined),
+                counterText: '',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -3009,24 +3093,30 @@ class EditProfileScreen extends StatelessWidget {
               width: double.infinity,
               height: 54,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Profile updated!')),
-                  );
-                  Navigator.pop(context);
-                },
+                onPressed: _saving ? null : _saveChanges,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE8752A),
                   foregroundColor: Colors.white,
+                  disabledBackgroundColor: const Color(0xFFE8752A),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
                   elevation: 2,
                 ),
-                child: const Text(
-                  'Save Changes',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Save Changes',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
               ),
             ),
           ],
