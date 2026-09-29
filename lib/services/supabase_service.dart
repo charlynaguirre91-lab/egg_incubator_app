@@ -143,10 +143,12 @@ class SupabaseService {
   // ── Sensor Readings ──
 
   Future<Map<String, dynamic>?> getLatestReading() async {
+    // limit(1) keeps maybeSingle() valid once the table holds many rows.
     final response = await _client
         .from('sensor_readings')
         .select()
         .order('recorded_at', ascending: false)
+        .limit(1)
         .maybeSingle();
     return response;
   }
