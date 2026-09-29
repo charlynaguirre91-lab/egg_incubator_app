@@ -431,11 +431,29 @@ class _OnboardingSlide {
 class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
+  /// Switches the shell to its [index] section (0 Home, 1 Species,
+  /// 2 History) and pops every route pushed on top of it. This lets a section
+  /// that was opened as a route - History from the overview cards, Species
+  /// from the "Top Species" card - hand navigation back to the shell, so the
+  /// bottom bar of such a screen can jump straight to another section
+  /// (issue #14).
+  static void openTab(BuildContext context, int index) {
+    final shell = _MainNavigationState._shell;
+    if (shell == null || !shell.mounted) return;
+    final shellRoute = ModalRoute.of(shell.context);
+    if (shellRoute == null) return;
+    shell._selectTab(index);
+    Navigator.popUntil(context, (route) => route == shellRoute);
+  }
+
   @override
   State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
+  /// The shell that is currently on screen, so pushed routes can reach it.
+  static _MainNavigationState? _shell;
+
   int _currentIndex = 0;
 
   final List<Widget> _screens = const [
@@ -445,37 +463,73 @@ class _MainNavigationState extends State<MainNavigation> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _shell = this;
+  }
+
+  @override
+  void dispose() {
+    if (identical(_shell, this)) _shell = null;
+    super.dispose();
+  }
+
+  /// Shows the [index] section (0 Home, 1 Species, 2 History).
+  void _selectTab(int index) {
+    if (_currentIndex == index) return;
+    setState(() {
+      _currentIndex = index;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _TabShell(child: _screens[_currentIndex]),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: _MainBottomBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        backgroundColor: Colors.white,
-        indicatorColor: const Color(0xFFE8752A).withValues(alpha: 0.15),
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: Color(0xFFE8752A)),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.egg_outlined),
-            selectedIcon: Icon(Icons.egg, color: Color(0xFFE8752A)),
-            label: 'Species',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history, color: Color(0xFFE8752A)),
-            label: 'History',
-          ),
-        ],
+        onSelected: _selectTab,
       ),
+    );
+  }
+}
+
+/// The SmartHatch bottom navigation bar. The shell provides it for its tabs;
+/// History and Species render the same bar when they are opened as routes so
+/// Home, Species and History stay one tap away there too (issue #14).
+class _MainBottomBar extends StatelessWidget {
+  const _MainBottomBar({required this.selectedIndex, required this.onSelected});
+
+  /// The currently shown section: 0 Home, 1 Species, 2 History.
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigationBar(
+      selectedIndex: selectedIndex,
+      onDestinationSelected: onSelected,
+      backgroundColor: Colors.white,
+      indicatorColor: const Color(0xFFE8752A).withValues(alpha: 0.15),
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: const [
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home, color: Color(0xFFE8752A)),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.egg_outlined),
+          selectedIcon: Icon(Icons.egg, color: Color(0xFFE8752A)),
+          label: 'Species',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.history_outlined),
+          selectedIcon: Icon(Icons.history, color: Color(0xFFE8752A)),
+          label: 'History',
+        ),
+      ],
     );
   }
 }
@@ -730,6 +784,17 @@ class _SpeciesScreenState extends State<SpeciesScreen> {
         // shell, one when the screen was pushed (e.g. "Top Species" card).
         automaticallyImplyLeading: !_TabShell.isTab(context),
       ),
+      // Same as History: a pushed Species screen gets the bottom bar so the
+      // main sections remain reachable (issue #14).
+      bottomNavigationBar: _TabShell.isTab(context)
+          ? null
+          : _MainBottomBar(
+              selectedIndex: 1,
+              onSelected: (index) {
+                if (index == 1) return; // already showing Species
+                MainNavigation.openTab(context, index);
+              },
+            ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -2330,6 +2395,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
         // the user can go back to where they came from (issue #12).
         automaticallyImplyLeading: !_TabShell.isTab(context),
       ),
+      // Opened as a route the shell's bottom bar is not around, so render it
+      // here too: Home, Species and History stay one tap away (issue #14).
+      // As a tab the shell already provides it.
+      bottomNavigationBar: _TabShell.isTab(context)
+          ? null
+          : _MainBottomBar(
+              selectedIndex: 2,
+              onSelected: (index) {
+                if (index == 2) return; // already showing History
+                MainNavigation.openTab(context, index);
+              },
+            ),
       body: SafeArea(
         child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
