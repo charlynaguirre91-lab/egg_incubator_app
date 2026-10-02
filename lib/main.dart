@@ -1580,10 +1580,9 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                             eggQuantity: widget.eggCount,
                             temperature: tempNum,
                           );
-                          if (!mounted) return;
-                          if (context.mounted) {
+                           if (mounted) {
                             Navigator.pushReplacement(
-                              context,
+                              this.context,
                               MaterialPageRoute(
                                 builder: (_) => IncubationStartedScreen(
                                   species: widget.species,
@@ -1594,9 +1593,8 @@ class _IncubationChecklistScreenState extends State<IncubationChecklistScreen> {
                             );
                           }
                         } catch (e) {
-                          if (!mounted) return;
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                          if (mounted) {
+                            ScaffoldMessenger.of(this.context).showSnackBar(
                               SnackBar(content: Text('Error: $e')),
                             );
                           }
